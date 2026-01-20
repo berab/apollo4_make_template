@@ -5,12 +5,7 @@ Device: Apollo4 Blue Lite EVB
 make clean all
 ```
 
-## RUN JLink GDB Server:
-```bash
-JLinkGDBServerCLExe -singlerun -nogui -port 61234 -device AMAP42KL-KBR
-```
+## Requirements
 
-## Connect GDB to the Server (.gdbinit is autocreated):
-```bash
-gdb-multiarch
-```
+- AmbiqSuite SDK 4.5.0
+- gdb-multiarch
