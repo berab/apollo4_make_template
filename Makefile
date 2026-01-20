@@ -41,7 +41,7 @@
 # Include rules specific to this board
 
 # All makefiles use this to find the top level directory.
-SDK_PATH := ../AmbiqSuite
+SDK_PATH := $(AMBIQSUITE)
 SWROOT ?= $(SDK_PATH)
 
 # Include rules for building generic examples.
@@ -54,8 +54,9 @@ TARGET := hello_world
 COMPILERNAME := gcc
 PROJECT := hello_world_gcc
 CONFIG := bin
+GDB := gdb-multiarch
 GDB_CONFIG := .gdbinit
-DEBUG_SERVER_PORT := 61234
+GDB_PORT := 61234
 
 SHELL:=/bin/bash
 
@@ -102,15 +103,15 @@ all clean:
 else
 
 DEFINES+= -DAM_PACKAGE_BGA
-DEFINES+= -DAM_PART_APOLLO4L
+DEFINES+= -DAM_PART_$(CFAMILY)
 DEFINES+= -Dgcc
 
 INCLUDES = -I$(SDK_PATH)
 INCLUDES+= -I$(SDK_PATH)/CMSIS/ARM/Include
 INCLUDES+= -I$(SDK_PATH)/CMSIS/AmbiqMicro/Include
 INCLUDES+= -I$(SDK_PATH)/devices
-INCLUDES+= -I$(SDK_PATH)/mcu/apollo4l
-INCLUDES+= -I$(SDK_PATH)/mcu/apollo4l/hal
+INCLUDES+= -I$(SDK_PATH)/mcu/$(FAMILY)
+INCLUDES+= -I$(SDK_PATH)/mcu/$(FAMILY)/hal
 INCLUDES+= -I$(SDK_PATH)/utils
 INCLUDES+= -I$(SDK_PATH)/boards/$(BOARD)/bsp
 INCLUDES+= -Isrc
@@ -137,7 +138,7 @@ OBJS+= $(ASRC:%.s=$(CONFIG)/%.o)
 DEPS = $(CSRC:%.c=$(CONFIG)/%.d)
 DEPS+= $(ASRC:%.s=$(CONFIG)/%.d)
 
-LIBS = $(SDK_PATH)/mcu/apollo4l/hal/mcu/gcc/bin/libam_hal.a
+LIBS = $(SDK_PATH)/mcu/$(FAMILY)/hal/mcu/gcc/bin/libam_hal.a
 LIBS += $(SDK_PATH)/boards/$(BOARD)/bsp/gcc/bin/libam_bsp.a
 
 CFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
@@ -162,7 +163,7 @@ CPFLAGS = -Obinary
 ODFLAGS = -S
 
 #### Rules ####
-all: directories $(CONFIG)/$(TARGET).bin $(GDB_CONFIG)
+all: directories $(CONFIG)/$(TARGET).bin $(GDB_CONFIG) run_jlink run_gdb
 
 directories: $(CONFIG)
 
@@ -191,7 +192,7 @@ $(CONFIG)/$(TARGET).bin: $(CONFIG)/$(TARGET).axf
 
 $(GDB_CONFIG):
 	@echo " Creating .gdbinit..."
-	@printf "file $(CONFIG)/$(TARGET).axf\ntarget remote localhost:$(DEBUG_SERVER_PORT)\nload\nbreak main\ncontinue\nlay next\nlay next\nlay next\nlist\nnext" > $(GDB_CONFIG)
+	@printf "file $(CONFIG)/$(TARGET).axf\ntarget remote localhost:$(GDB_PORT)\nload\nbreak main\ncontinue\nlay next\nlay next\nlay next\nlist\nnext" > $(GDB_CONFIG)
 
 clean:
 	@echo "Cleaning..."
@@ -210,6 +211,9 @@ $(SDK_PATH)/boards/$(BOARD)/bsp/gcc/bin/libam_bsp.a:
 endif
 .PHONY: all clean directories
 
-# JLINK SERVER:
-# JLinkGDBServerCLExe -singlerun -noguio -port 61234 -device AMAP42KL-KBR
+run_jlink:
+	JLinkGDBServerCLExe -singlerun -noguio -port $(GDB_PORT) -device $(DEVICE) >L /dev/null & 
+
+run_gdb:
+	$(GDB)
 
